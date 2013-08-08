@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
+           id="org.apache.cordova.plugin.paypalmpl"
+      version="0.1.0">
+    <name>PayPalMPL</name>
+
+    <js-module src="www/PayPalMPL.js" name="PayPalMPL">
+        <clobbers target="window.plugins.PayPalMPL" />
+    </js-module>
+
+    <!-- android -->
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="PayPalMPL">
+                <param name="android-package" value="org.apache.cordova.plugin.PayPalMPL"/>
+            </feature>
+        </config-file>
+        <config-file target="AndroidManifest.xml" parent="/*">
+            <activity android:configChanges="keyboardHidden|orientation" 
+                android:name="com.paypal.android.MEP.PayPalActivity" 
+                android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+			<uses-permission android:name="android.permission.INTERNET"/>
+			<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+          </config-file>
+
+        <source-file src="src/android/PayPalMPL.java" target-dir="src/org/apache/cordova/plugin" />
+        <source-file src="src/android/PayPalMPLResultDelegate.java" target-dir="src/org/apache/cordova/plugin" />
+        
+     </platform>
+     
+     <!-- ios -->
+     <platform name="ios">    
+         <config-file target="config.xml" parent="/*">
+             <feature name="PayPalMPL">
+                 <param name="ios-package" value="CDVPayPalMPL" />
+             </feature>
+         </config-file>
+         
+         <header-file src="src/ios/CDVPayPalMPL.h" />
+         <source-file src="src/ios/CDVPayPalMPL.m" />
+
+ 	     <framework src="Security.framework" />
+ 	     <framework src="libxml2.dylib" />
+         <framework src="libz.1.2.5.dylib" />
+	</platform>
+          
+</plugin>
