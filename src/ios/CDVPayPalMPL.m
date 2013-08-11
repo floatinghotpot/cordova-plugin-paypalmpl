@@ -30,16 +30,15 @@
 {
     self = (CDVPayPalMPL*)[super initWithWebView:(UIWebView*)theWebView];
     if (self) {
-		if ([PAYPAL_APP_ID isEqualToString:NO_APP_ID]) {
-			NSLog(@"WARNING: You are using a dummy PayPal App ID.");
-		}
-		if (PAYPAL_APP_ENV == ENV_NONE) {
-			NSLog(@"WARNING: You are using the offline PayPal ENV_NONE environment.");
-		}
+		//if ([PAYPAL_APP_ID isEqualToString:NO_APP_ID]) {
+		//	NSLog(@"WARNING: You are using a dummy PayPal App ID.");
+		//}
+		//if (PAYPAL_APP_ENV == ENV_NONE) {
+		//	NSLog(@"WARNING: You are using the offline PayPal ENV_NONE environment.");
+		//}
 		
-		[PayPal initializeWithAppID:PAYPAL_APP_ID forEnvironment:PAYPAL_APP_ENV];
-        
-        NSLog( @"PayPalMPL init: buildVersion = %@", [PayPal buildVersion] );
+		//[PayPal initializeWithAppID:PAYPAL_APP_ID forEnvironment:PAYPAL_APP_ENV];
+        //NSLog( @"PayPalMPL init: buildVersion = %@", [PayPal buildVersion] );
     }
     return self;
 }
@@ -71,6 +70,7 @@
     }
     
     [PayPal initializeWithAppID:appId forEnvironment:nEnv];
+    NSLog( @"PayPalMPL init: buildVersion = %@, appId:%@, appEnv:%d", [PayPal buildVersion], appId, nEnv );
     
     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
@@ -304,6 +304,9 @@
     NSString *message = [[PayPal getPayPalInst].responseMessage objectForKey:@"message"];
     NSLog(@"message: %@", message);
     
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:payCallbackId];
+    
     pStatus = PAYMENTSTATUS_FAILED;
 }
 
@@ -317,6 +320,11 @@
 	"})();";
 	
 	[super writeJavascript:jsString];
+    
+    NSLog( @"PayPalMPL.paymentCanceled" );
+    
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:payCallbackId];
     
     pStatus = PAYMENTSTATUS_CANCELED;
 }
