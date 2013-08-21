@@ -13,6 +13,7 @@
 #define APP_ENV_ARG_INDEX   1
 
 #define PAYMENT_TYPE_ARG_INDEX    0
+#define LANG_ARG_INDEX            1
 
 #define PAYMENT_INFO_ARG_INDEX    0
 
@@ -36,7 +37,7 @@ typedef enum PaymentStatuses {
 @property (nonatomic, assign) PaymentStatus pStatus;
 @property (nonatomic, retain) NSString * payCallbackId;
 
-- (void) construct:(CDVInvokedUrlCommand *)command;
+- (void) initWithAppID:(CDVInvokedUrlCommand *)command;
 - (void) getStatus:(CDVInvokedUrlCommand *)command;
 
 - (void) prepare:(CDVInvokedUrlCommand *)command;

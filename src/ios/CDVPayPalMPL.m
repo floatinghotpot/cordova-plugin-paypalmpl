@@ -43,7 +43,7 @@
     return self;
 }
 
-- (void) construct:(CDVInvokedUrlCommand *)command
+- (void) initWithAppID:(CDVInvokedUrlCommand *)command
 {
     CDVPluginResult *pluginResult;
     NSString *callbackId = command.callbackId;
@@ -56,21 +56,21 @@
     
     NSString* appId = [args valueForKey:@"appId"];
     if(! appId) appId = PAYPAL_APP_ID;
-        
+    
+    NSInteger nEnv = ENV_NONE;
     NSString* appEnv = [args valueForKey:@"appEnv"];
-    if(! appEnv) appEnv = @"0";
-    NSInteger nEnv = [appEnv intValue];
-    switch( nEnv ) {
-        case ENV_LIVE:
-        case ENV_SANDBOX:
-        case ENV_NONE:
-            break;
-        default:
+    if( appEnv ) {
+        if([appEnv isEqualToString:@"ENV_LIVE"]) {
             nEnv = ENV_LIVE;
+        } else if ([appEnv isEqualToString:@"ENV_SANDBOX"]) {
+            nEnv = ENV_SANDBOX;
+        } else {
+            nEnv = ENV_NONE;
+        }
     }
     
     [PayPal initializeWithAppID:appId forEnvironment:nEnv];
-    NSLog( @"PayPalMPL init: buildVersion = %@, appId:%@, appEnv:%d", [PayPal buildVersion], appId, nEnv );
+    NSLog( @"PayPalMPL init: buildVersion = %@, appId:%@, appEnv:%@", [PayPal buildVersion], appId, appEnv );
     
     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
@@ -103,34 +103,36 @@
 
 - (void) prepare:(CDVInvokedUrlCommand *)command
 {
+    return;
+    
     CDVPluginResult *pluginResult;
     NSString *callbackId = command.callbackId;
     NSArray* arguments = command.arguments;
     
-/*
-    switch( [PayPal initializationStatus] ) {
-        case STATUS_COMPLETED_SUCCESS:
-            NSLog(@"PayPal initialized");
-            break;
-        case STATUS_COMPLETED_ERROR:
-            NSLog(@"PayPal init failed");
-            break;
-        case STATUS_INPROGRESS:
-            NSLog(@"PayPal init in progress");
-            break;
-        case STATUS_NOT_STARTED:
-            NSLog(@"PayPal init not started");
-            break;
-    }
-*/
 	int argc = [arguments count];
 	if (argc < 1) {
-		NSLog(@"PayPalMPL.prepare - missing first argument for paymentType (integer).");
+		NSLog(@"PayPalMPL.prepare - missing argument for paymentType and lang (string).");
 		return;
 	}
 	
-	NSInteger paymentType = [[arguments objectAtIndex:PAYMENT_TYPE_ARG_INDEX] intValue];
+    NSInteger paymentType = TYPE_NOT_SET;
+    NSString *strPaymentType = [arguments objectAtIndex:PAYMENT_TYPE_ARG_INDEX];
+    if( strPaymentType ) {
+        NSLog( @"strPaymentType: %@", strPaymentType );
+        if( [strPaymentType isEqualToString:@"TYPE_GOODS"] ) {
+            paymentType = TYPE_GOODS;
+        } else if ([strPaymentType isEqualToString:@"TYPE_SERVICE"] ) {
+            paymentType = TYPE_SERVICE;
+        } else if ([strPaymentType isEqualToString:@"TYPE_PERSONAL"] ) {
+            paymentType = TYPE_PERSONAL;
+        } else {
+            paymentType = TYPE_NOT_SET;
+        }
+    }
 
+    NSString *strLang = [arguments objectAtIndex:LANG_ARG_INDEX];
+    if(! strLang) strLang = @"en_US";
+    
 	if (self.ppButton != nil) {
 		[self.ppButton removeFromSuperview];
 		self.ppButton = nil;
@@ -150,6 +152,7 @@
 	NSLog(@"PayPalMPL.prepare - set paymentType: %d", paymentType);
     
     PayPal* pp = [PayPal getPayPalInst];
+    pp.lang = strLang;
     pp.shippingEnabled = FALSE;
     pp.dynamicAmountUpdateEnabled = NO;
     pp.feePayer = FEEPAYER_EACHRECEIVER;
@@ -165,7 +168,7 @@
     NSArray* arguments = command.arguments;
     
     NSLog(@"PayPalMPL.setPaymentInfo - called");
-
+    
     self.ppPayment = nil;
     self.ppPayment = [[PayPalPayment alloc] init];
 
@@ -173,6 +176,54 @@
     if ([arguments objectAtIndex:PAYMENT_INFO_ARG_INDEX]) {
         payinfo = [NSDictionary dictionaryWithDictionary:[arguments objectAtIndex:PAYMENT_INFO_ARG_INDEX]];
     }
+    
+    NSString *strLang = [payinfo valueForKey:@"lang"];
+    if(! strLang) strLang = @"en_US";
+    
+    PayPal* pp = [PayPal getPayPalInst];
+    pp.lang = strLang;
+    pp.shippingEnabled = FALSE;
+    pp.dynamicAmountUpdateEnabled = NO;
+    pp.feePayer = FEEPAYER_EACHRECEIVER;
+    
+    NSInteger paymentType = TYPE_NOT_SET;
+    NSString *strPaymentType = [payinfo valueForKey:@"paymentType"];
+    if( strPaymentType ) {
+        NSLog( @"strPaymentType: %@", strPaymentType );
+        if( [strPaymentType isEqualToString:@"TYPE_GOODS"] ) {
+            paymentType = TYPE_GOODS;
+        } else if ([strPaymentType isEqualToString:@"TYPE_SERVICE"] ) {
+            paymentType = TYPE_SERVICE;
+        } else if ([strPaymentType isEqualToString:@"TYPE_PERSONAL"] ) {
+            paymentType = TYPE_PERSONAL;
+        } else {
+            paymentType = TYPE_NOT_SET;
+        }
+    }
+    
+    BOOL bHideButton = NO;
+    NSInteger nPayPalButton = [[payinfo valueForKey:@"showPayPalButton"] integerValue];
+    if( nPayPalButton < BUTTON_152x33 || nPayPalButton >= BUTTON_TYPE_COUNT ) {
+        nPayPalButton = BUTTON_152x33;
+        bHideButton = YES;
+    }
+    
+	if (self.ppButton != nil) {
+		[self.ppButton removeFromSuperview];
+		self.ppButton = nil;
+	}
+	
+    self.ppButton = [ [PayPal getPayPalInst] getPayButtonWithTarget:self
+                                                          andAction:@selector(checkout)
+                                                      andButtonType:nPayPalButton
+                                                      andButtonText:BUTTON_TEXT_PAY ];
+    if(self.ppButton == nil) {
+        NSLog(@"ppButton = nil, failed calling getPayButtonWithTarget?");
+        return;
+    }
+    
+	[super.webView addSubview:self.ppButton];
+	self.ppButton.hidden = bHideButton;
     
     self.ppPayment.paymentType = self.pType;
     self.ppPayment.paymentCurrency = [payinfo valueForKey:@"paymentCurrency"];
@@ -228,9 +279,9 @@
         payCallbackId = command.callbackId;
         [self checkout];
 	} else {
-		NSLog( @"PayPalMPL.pay - call prepare(paymentType) first" );
+		NSLog( @"PayPalMPL.pay - call setPaymentInfo first" );
         
-        NSString * msg = @"PayPalMPL.pay - call prepare(paymentType) first";
+        NSString * msg = @"PayPalMPL.pay - call setPaymentInfo first";
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
                                                           messageAsString:msg];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];

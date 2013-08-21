@@ -50,47 +50,44 @@ public class PayPalMPL extends CordovaPlugin implements OnClickListener {
 	private static final String LOGTAG = "PayPalMPL";
 
 	/** Cordova Actions. */
-	private static final String ACTION_CONSTRUCT = "construct";
+	private static final String ACTION_INIT_WITH_APP_ID = "initWithAppID";
 	private static final String ACTION_GET_STATUS = "getStatus";
-	private static final String ACTION_PREPARE = "prepare";
 	private static final String ACTION_SET_PAYMENT_INFO = "setPaymentInfo";
 	private static final String ACTION_PAY = "pay";
 	
 	private static final int REQUEST_PAYPAL_CHECKOUT = 2;
 	private static final int PAYPAL_BUTTON_ID = 10001;
 	
+	private CallbackContext payCallback = null;
+	
 	@Override
 	public boolean execute(String action, final JSONArray inputs, final CallbackContext callbackContext) throws JSONException {
 		Log.d(LOGTAG, "Plugin Called: " + action);
 		
-		if (ACTION_CONSTRUCT.equals(action)) {
+		if (ACTION_INIT_WITH_APP_ID.equals(action)) {
 			thisPlugin = this;
 			
 			cordova.getThreadPool().execute(new Runnable() {
 	            public void run() {
-	            	callbackContext.sendPluginResult( executeConstruct(inputs) );
+	            	executeInitWithAppID(inputs, callbackContext);
 	            }
 	        });
 			return true;
 			
 		} else if (ACTION_GET_STATUS.equals(action)) {
-			callbackContext.sendPluginResult( executeGetStatus(inputs) );
-			
-		} else if (ACTION_PREPARE.equals(action)) {
-			cordova.getActivity().runOnUiThread(new Runnable() {
-	            public void run() {
-	            	callbackContext.sendPluginResult( executePrepare(inputs) );
-	            }
-	        });
-			return true;
+			executeGetStatus(inputs, callbackContext);
 			
 		} else if (ACTION_SET_PAYMENT_INFO.equals(action)) {
-			callbackContext.sendPluginResult( executeSetPaymentInfo(inputs) );
-			
+			cordova.getActivity().runOnUiThread(new Runnable() {
+	            public void run() {
+	            	executeSetPaymentInfo(inputs, callbackContext);
+	            }
+			});
+			return true;
 		} else if (ACTION_PAY.equals(action)) {
 			cordova.getActivity().runOnUiThread(new Runnable() {
 	            public void run() {
-	    			callbackContext.sendPluginResult( executePay(inputs) );
+	    			executePay(inputs, callbackContext );
 	            }
 	        });
 			return true;
@@ -100,34 +97,35 @@ public class PayPalMPL extends CordovaPlugin implements OnClickListener {
 		return false;
 	}
 
-	private PluginResult executeConstruct(JSONArray inputs) {
+	private boolean executeInitWithAppID(JSONArray inputs, CallbackContext callbackContext) {
 		JSONObject args;
 		
 		// Get the input data.
+		String strEnv = "ENV_NONE";
 		try {
 			args = inputs.getJSONObject(0);
 			this.appId = args.getString("appId");
-			this.appEnv = args.getInt("appEnv");
+			strEnv = args.getString("appEnv");
 		} catch (JSONException exception) {
-			Log.w(LOGTAG,
-					String.format("Got JSON Exception: %s",
-							exception.getMessage()));
-			return new PluginResult(Status.JSON_EXCEPTION);
+			Log.w(LOGTAG, String.format("Got JSON Exception: %s", exception.getMessage()));
+			callbackContext.sendPluginResult( new PluginResult(Status.JSON_EXCEPTION) );
+			return true;
 		}
 
-		switch (this.appEnv) {
-		case PayPal.ENV_LIVE:
-		case PayPal.ENV_SANDBOX:
-		case PayPal.ENV_NONE:
-			break;
-		default:
+		if( strEnv.equals( "ENV_LIVE" ) ) {
 			this.appEnv = PayPal.ENV_LIVE;
+		} else if ( strEnv.equals( "ENV_SANDBOX" ) ) {
+			this.appEnv = PayPal.ENV_SANDBOX;
+		} else {
+			this.appEnv = PayPal.ENV_NONE;
 		}
 
-		Log.d(LOGTAG, "init paypal for " + this.appId + " with " + this.appEnv);
+		Log.d(LOGTAG, "init paypal for " + this.appId + " with " + strEnv);
 
 		PayPal.initWithAppID(cordova.getActivity(), this.appId, this.appEnv);
-		return new PluginResult(Status.OK);
+		callbackContext.sendPluginResult( new PluginResult(Status.OK) );
+		
+		return true;
 	}
 
  	public boolean isOnline() {
@@ -140,7 +138,7 @@ public class PayPalMPL extends CordovaPlugin implements OnClickListener {
  		return false;
  	} 	
 
-	private PluginResult executeGetStatus(JSONArray inputs) {
+	private boolean executeGetStatus(JSONArray inputs, CallbackContext callbackContext) {
 		String status = "0";
 		PayPal pp = PayPal.getInstance();
 		Log.i("mpl", "getStatus: after instance");
@@ -153,27 +151,55 @@ public class PayPalMPL extends CordovaPlugin implements OnClickListener {
 			json.put("str", status);
 		} catch (JSONException e) {
 		}
-		return new PluginResult(Status.OK, json);		
+		callbackContext.sendPluginResult( new PluginResult(Status.OK, json) );
+		return true;
 	}
 	
-	private PluginResult executePrepare(JSONArray inputs) {
+	private boolean executeSetPaymentInfo(JSONArray inputs, CallbackContext callbackContext) {
+		JSONObject args = null;
+		
+		String strType = "TYPE_GOODS";
+		String strLang = "en_US";
+		int nButton = PayPal.BUTTON_152x33;
+		boolean bHideButton = false;
+		this.ppPayment = new PayPalPayment();
+		this.ppPayment.setPaymentType( this.pType );
 		try {
-			this.pType = inputs.getInt(0);
+			args = inputs.getJSONObject(0);
+			
+			strLang = args.getString("lang");
+			strType = args.getString("paymentType");
+			nButton = args.getInt("showPayPalButton");
+			if( nButton < PayPal.BUTTON_152x33 || nButton > PayPal.BUTTON_294x45 ) {
+				nButton = PayPal.BUTTON_152x33;
+				bHideButton = true;
+			}
+			this.ppPayment.setCurrencyType(args.getString("paymentCurrency"));
+			this.ppPayment.setRecipient(args.getString("recipient"));
+		    this.ppPayment.setDescription(args.getString("description"));
+		    this.ppPayment.setMerchantName(args.getString("merchantName"));
+			BigDecimal amount = new BigDecimal(args.getString("subTotal"));
+			amount.round(new MathContext(2, RoundingMode.HALF_UP));
+			this.ppPayment.setSubtotal(amount);
+			
 		} catch (JSONException e) {
+			Log.d(LOGTAG, "Got JSON Exception "+ e.getMessage());
+			callbackContext.sendPluginResult( new PluginResult(Status.JSON_EXCEPTION) );
+			return true;
 		}
-
-		switch( this.pType ) {
-		case PayPal.PAYMENT_TYPE_GOODS:
-		case PayPal.PAYMENT_TYPE_SERVICE:
-		case PayPal.PAYMENT_TYPE_PERSONAL:
-		case PayPal.PAYMENT_TYPE_NONE:
-			break;
-		default:
+		
+		if( strType.equals("TYPE_GOODS") ) {
 			this.pType = PayPal.PAYMENT_TYPE_GOODS;
+		} else if( strType.equals("YPE_SERVICE") ) {
+			this.pType = PayPal.PAYMENT_TYPE_SERVICE;
+		} if( strType.equals("TYPE_PERSONAL") ) {
+			this.pType = PayPal.PAYMENT_TYPE_PERSONAL;
+		} else {
+			this.pType = PayPal.PAYMENT_TYPE_NONE;
 		}
 		
 		PayPal pp = PayPal.getInstance();
-		pp.setLanguage("en_US");
+		pp.setLanguage( strLang );
 		pp.setShippingEnabled(false);
 		pp.setFeesPayer(PayPal.FEEPAYER_EACHRECEIVER);
 		pp.setDynamicAmountCalculationEnabled(false);
@@ -185,80 +211,31 @@ public class PayPalMPL extends CordovaPlugin implements OnClickListener {
 		
 		// Back in the UI thread -- show the "Pay with PayPal" button
 		// Generate the PayPal Checkout button and save it for later use
-		this.ppButton = pp.getCheckoutButton(this.cordova.getActivity(), PayPal.BUTTON_278x43,
+		this.ppButton = pp.getCheckoutButton(this.cordova.getActivity(), nButton,
 				CheckoutButton.TEXT_PAY);
+		
 		// You'll need to have an OnClickListener for the CheckoutButton.
 		this.ppButton.setOnClickListener(this);
 		this.ppButton.setId(PAYPAL_BUTTON_ID);		
 		webView.addView( this.ppButton );
-		
-		return new PluginResult(Status.OK);		
+		this.ppButton.setVisibility( bHideButton ? View.INVISIBLE : View.VISIBLE );		
+
+		callbackContext.sendPluginResult( new PluginResult(Status.OK) );
+		return true;
 	}
 	
-	private PluginResult executeSetPaymentInfo(JSONArray inputs) {
-		JSONObject args = null;
-		
-		this.ppPayment = new PayPalPayment();
-		this.ppPayment.setPaymentType( this.pType );
-		try {
-			args = inputs.getJSONObject(0);
-			
-			this.ppPayment.setCurrencyType(args.getString("paymentCurrency"));
-			this.ppPayment.setRecipient(args.getString("recipient"));
-		    this.ppPayment.setDescription(args.getString("description"));
-		    this.ppPayment.setMerchantName(args.getString("merchantName"));
-			BigDecimal amount = new BigDecimal(args.getString("subTotal"));
-			amount.round(new MathContext(2, RoundingMode.HALF_UP));
-			this.ppPayment.setSubtotal(amount);
-			
-		} catch (JSONException e) {
-			Log.d(LOGTAG, "Got JSON Exception "+ e.getMessage());
-			return new PluginResult(Status.JSON_EXCEPTION);
-		}
-
-		// PayPalInvoiceData can contain tax and shipping amounts. It also
-		// contains an ArrayList of PayPalInvoiceItem which can
-		// be filled out. These are not required for any transaction.
-		PayPalInvoiceData invoice = new PayPalInvoiceData();
-		BigDecimal tax = new BigDecimal(0.0);
-		tax = tax.setScale(2, RoundingMode.HALF_UP);
-		invoice.setTax(tax);
-
-		// PayPalInvoiceItem has several parameters available to it. None of these parameters is required.
-		PayPalInvoiceItem item1 = new PayPalInvoiceItem();
-		// Sets the name of the item.
-    	item1.setName("game coins");
-    	// Sets the ID. This is any ID that you would like to have associated with the item.
-    	item1.setID("1234");
-    	// Sets the total price which should be (quantity * unit price). The total prices of all PayPalInvoiceItem should add up
-    	// to less than or equal the subtotal of the payment.
-    	item1.setTotalPrice(this.ppPayment.getSubtotal());
-    	// Sets the unit price.
-    	item1.setUnitPrice(this.ppPayment.getSubtotal());
-    	// Sets the quantity.
-    	item1.setQuantity(1);
-    	// Add the PayPalInvoiceItem to the PayPalInvoiceData. Alternatively, you can create an ArrayList<PayPalInvoiceItem>
-    	// and pass it to the PayPalInvoiceData function setInvoiceItems().
-    	invoice.getInvoiceItems().add(item1);
-
-		// Sets the PayPalPayment invoice data.
-		this.ppPayment.setInvoiceData(invoice);
-		
-		return new PluginResult(Status.OK);
-	}
-	
-	private PluginResult executePay(JSONArray inputs) {
+	private boolean executePay(JSONArray inputs, CallbackContext callbackContext) {
 		PluginResult result = null;
 		
-		if( this.ppPayment != null ) {
+		if( this.ppButton != null ) {
+			this.payCallback = callbackContext;
 			checkout();
-			
-			result = new PluginResult(Status.OK);
 		} else {
-			result = new PluginResult(Status.ERROR, "No payment info, call setPaymentInfo");
+			Log.d(LOGTAG, "PayPalMPL.pay - call setPaymentInfo first" );
+			callbackContext.sendPluginResult( new PluginResult(Status.ERROR, "call setPaymentInfo") );
 		}
 		
-		return result;
+		return true;
 	}
 
 	@Override
@@ -273,15 +250,73 @@ public class PayPalMPL extends CordovaPlugin implements OnClickListener {
 	private void checkout() {
 		if (this.ppPayment != null) {
 			PayPal pp = PayPal.getInstance();
-			Intent checkoutIntent = pp.checkout(this.ppPayment, 
-					cordova.getActivity().getApplicationContext(),
-					new PayPalMPLResultDelegate());
+			
+			Intent checkoutIntent = pp.checkout(
+					this.ppPayment, 
+					cordova.getActivity().getApplicationContext(), 
+					new PayPalMPLResultDelegate() );
+			
 			cordova.getActivity().startActivityForResult(checkoutIntent,
 					REQUEST_PAYPAL_CHECKOUT);
 		} else {
 			Log.d(LOGTAG, "payment info not set, call setPaymentInfo first.");
 		}
 	}
+	
+	public void onPaymentSucceeded(final String payKey, final String paymentStatus) {
+		Log.i(LOGTAG, "onPaymentSucceeded");
+		
+		cordova.getActivity().runOnUiThread(new Runnable() {
+            public void run() {
 
+            	PayPalMPL.thisPlugin.webView.loadUrl("javascript:" +
+					"(function() {" +
+					"var e = document.createEvent('Events');" +
+					"e.initEvent('PaypalPaymentEvent.Success');" +
+					"e.payKey = '"+ payKey + "';" +
+					"e.paymentStatus = '"+ paymentStatus + "';" +
+					"document.dispatchEvent(e);" +
+					"})();");
+            }
+		});
+		this.payCallback.sendPluginResult( new PluginResult(Status.OK, paymentStatus) );
+	}	
 
+	public void onPaymentFailed(final String paymentStatus, final String correlationID,
+			final String payKey, final String errorID, final String errorMessage) {
+
+		Log.i(LOGTAG, "onPaymentFailed");
+		
+		cordova.getActivity().runOnUiThread(new Runnable() {
+			public void run() {
+				PayPalMPL.thisPlugin.webView.loadUrl( "javascript:" + "(function() {"
+						+ "var e = document.createEvent('Events');"
+						+ "e.initEvent('PaypalPaymentEvent.Failed');"
+						+ "e.payKey = '" + payKey + "';"
+						+ "e.paymentStatus = '" + paymentStatus + "';"
+						+ "e.correlationID = '" + correlationID + "';"
+						+ "e.errorID = '" + errorID + "';"
+						+ "e.errorMessage = '" + errorMessage + "';"
+						+ "document.dispatchEvent(e);" + "})();" );
+			}
+		});
+		this.payCallback.sendPluginResult(new PluginResult(Status.ERROR, errorMessage));
+	}
+
+	public void onPaymentCanceled(final String paymentStatus) {
+		Log.i(LOGTAG, "onPaymentCanceled");
+		
+		cordova.getActivity().runOnUiThread(new Runnable() {
+			public void run() {
+				PayPalMPL.thisPlugin.webView.loadUrl( "javascript:" + "(function() {" +
+				"var e = document.createEvent('Events');" +
+				"e.initEvent('PaypalPaymentEvent.Canceled');" +
+				"e.paymentStatus = '"+ paymentStatus + "';" +
+				"document.dispatchEvent(e);" +
+				"})();");	
+			}
+		});
+		
+		this.payCallback.sendPluginResult(new PluginResult(Status.ERROR, paymentStatus));
+	}
 }

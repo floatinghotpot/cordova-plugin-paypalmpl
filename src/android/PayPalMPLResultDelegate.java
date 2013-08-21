@@ -19,16 +19,7 @@ public class PayPalMPLResultDelegate implements PayPalResultDelegate,
 	 * @param paymentStatus		the status of the transaction
 	 */
 	public void onPaymentSucceeded(String payKey, String paymentStatus) {
-		Log.i(LOGTAG, "onPaymentSucceeded");
-		
-		PayPalMPL.thisPlugin.webView.loadUrl("javascript:" +
-				"(function() {" +
-				"var e = document.createEvent('Events');" +
-				"e.initEvent('PaypalPaymentEvent.Success');" +
-				"e.payKey = '"+ payKey + "';" +
-				"e.paymentStatus = '"+ paymentStatus + "';" +
-				"document.dispatchEvent(e);" +
-				"})();");		
+		PayPalMPL.thisPlugin.onPaymentSucceeded(payKey, paymentStatus);;		
 	}
 
 	/**
@@ -42,22 +33,7 @@ public class PayPalMPLResultDelegate implements PayPalResultDelegate,
 	 */
 	public void onPaymentFailed(String paymentStatus, String correlationID,
 			String payKey, String errorID, String errorMessage) {
-
-		Log.i(LOGTAG, "onPaymentFailed");
-		
-		String js = "javascript:" +
-				"(function() {" +
-				"var e = document.createEvent('Events');" +
-				"e.initEvent('PaypalPaymentEvent.Failed');" +
-				"e.payKey = '"+ payKey + "';" +
-				"e.paymentStatus = '"+ paymentStatus + "';" +
-				"e.correlationID = '"+ correlationID + "';" +
-				"e.errorID = '"+ errorID + "';" +
-				"e.errorMessage = '"+ errorMessage + "';" +
-				"document.dispatchEvent(e);" +
-				"})();";
-		Log.d(LOGTAG, js);
-		PayPalMPL.thisPlugin.webView.loadUrl( js );	
+		PayPalMPL.thisPlugin.onPaymentFailed(paymentStatus, correlationID, payKey, errorID, errorMessage);
 	}
 
 	/**
@@ -66,15 +42,6 @@ public class PayPalMPLResultDelegate implements PayPalResultDelegate,
 	 * @param paymentStatus		the status of the transaction
 	 */
 	public void onPaymentCanceled(String paymentStatus) {
-		Log.i(LOGTAG, "onPaymentCanceled");
-		
-		PayPalMPL.thisPlugin.webView.loadUrl("javascript:" +
-				"(function() {" +
-				"var e = document.createEvent('Events');" +
-				"e.initEvent('PaypalPaymentEvent.Canceled');" +
-				"e.paymentStatus = '"+ paymentStatus + "';" +
-				"document.dispatchEvent(e);" +
-				"})();");	
+		PayPalMPL.thisPlugin.onPaymentCanceled(paymentStatus);
 	}
-
 }
