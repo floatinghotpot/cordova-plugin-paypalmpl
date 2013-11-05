@@ -9,6 +9,9 @@
 	<description>Add PayPal support with MPL SDK (not new SDK)</description>
 	<author>Liming Xie</author>
 	<license>MIT</license>
+	<engines>
+	    <engine name="cordova" version=">=3.0" />
+	</engines>
 	
     <js-module src="www/PayPalMPL.js" name="PayPalMPL">
         <clobbers target="window.plugins.PayPalMPL" />
