@@ -1,4 +1,4 @@
-package org.apache.cordova.plugin;
+package com.rjfun.cordova.plugin;
 
 import java.io.Serializable;
 

@@ -4,7 +4,7 @@
  * Copyright (C) 2011, Mobile Developer Solutions All Rights Reserved.
  */
 
-package org.apache.cordova.plugin;
+package com.rjfun.cordova.plugin;
 
 import java.math.BigDecimal;
 import java.math.MathContext;

@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
-           id="org.apache.cordova.plugin.paypalmpl"
-      version="0.1.0">
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+           id="com.rjfun.cordova.plugin.paypalmpl"
+      version="1.0">
+      
     <name>PayPalMPL</name>
-
+	<description>Add PayPal support with MPL SDK (not new SDK)</description>
+	<author>Liming Xie</author>
+	<license>MIT</license>
+	
     <js-module src="www/PayPalMPL.js" name="PayPalMPL">
         <clobbers target="window.plugins.PayPalMPL" />
     </js-module>
@@ -13,7 +18,7 @@
     <platform name="android">
         <config-file target="res/xml/config.xml" parent="/*">
             <feature name="PayPalMPL">
-                <param name="android-package" value="org.apache.cordova.plugin.PayPalMPL"/>
+                <param name="android-package" value="com.rjfun.cordova.plugin.PayPalMPL"/>
             </feature>
         </config-file>
         <config-file target="AndroidManifest.xml" parent="/manifest/application">
@@ -27,8 +32,8 @@
 			<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
           </config-file>
           
-        <source-file src="src/android/PayPalMPL.java" target-dir="src/org/apache/cordova/plugin" />
-        <source-file src="src/android/PayPalMPLResultDelegate.java" target-dir="src/org/apache/cordova/plugin" />
+        <source-file src="src/android/PayPalMPL.java" target-dir="src/com/rjfun/cordova/plugin" />
+        <source-file src="src/android/PayPalMPLResultDelegate.java" target-dir="src/com/rjfun/cordova/plugin" />
         
      </platform>
      
