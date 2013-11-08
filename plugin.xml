@@ -37,6 +37,7 @@
           
         <source-file src="src/android/PayPalMPL.java" target-dir="src/com/rjfun/cordova/plugin" />
         <source-file src="src/android/PayPalMPLResultDelegate.java" target-dir="src/com/rjfun/cordova/plugin" />
+		<source-file src="src/android/PayPal_MPL.jar" target-dir="libs" />
         
      </platform>
      
@@ -50,6 +51,18 @@
          
          <header-file src="src/ios/CDVPayPalMPL.h" />
          <source-file src="src/ios/CDVPayPalMPL.m" />
+
+         <header-file src="src/ios/PayPal.h" />
+         <header-file src="src/ios/PayPalAddress.h" />
+         <header-file src="src/ios/PayPalAdvancedPayment.h" />
+         <header-file src="src/ios/PayPalAmounts.h" />
+         <header-file src="src/ios/PayPalInvoiceData.h" />
+         <header-file src="src/ios/PayPalInvoiceItem.h" />
+         <header-file src="src/ios/PayPalPayment.h" />
+         <header-file src="src/ios/PayPalPreapprovalDetails.h" />
+         <header-file src="src/ios/PayPalReceiverAmounts.h" />
+         <header-file src="src/ios/PayPalReceiverPaymentDetails.h" />
+         <source-file src="src/ios/libPayPalMPL.a" framework="true" />
 
  	     <framework src="Security.framework" />
  	     <framework src="libxml2.dylib" />
