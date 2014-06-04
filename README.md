@@ -24,4 +24,58 @@ cordova plugin add https://github.com/floatinghotpot/cordova-plugin-paypalmpl.gi
 
 Check the README.md in sub folder for details.
 
+# How to use it in javascript #
+---------------------------------
 
+        function onDeviceReady() {
+        	
+            document.addEventListener('PaypalPaymentEvent.Success',function(){
+            	alert('game coins purchased, enjoy gaming.');
+            });
+
+            document.addEventListener('PaypalPaymentEvent.Failed',function(){
+            	alert('sorry that payment failed, please try again later.');
+            });
+            
+            if( window.plugins && window.plugins.PayPalMPL ) {
+            	var isTesting = false;
+            	var appID = isTesting ? 'APP-80W284485P519543T' : 'APP-0HN45655HA567492N';
+                var appEnv = isTesting ? ppm.PaymentEnv.ENV_SANDBOX : ppm.PaymentEnv.ENV_LIVE;
+				
+                var ppm = window.plugins.PayPalMPL;
+                ppm.initWithAppID( {
+            	      'appId': appID,
+            	      'appEnv': appEnv,
+            	      }, function(){
+            	    	  window.plugins.PayPalMPL.isReady = true;
+            	      }, function(){
+            	      });
+        	}
+        }
+        
+        function buyGameCoin( n ) {
+            if( window.plugins && window.plugins.PayPalMPL ) {
+            	var ppm = window.plugins.PayPalMPL;
+            	ppm.setPaymentInfo({
+        			'lang' : 'en_US',
+        			'paymentType' : ppm.PaymentType.TYPE_GOODS,
+        			'showPayPalButton': -1,
+            		'paymentCurrency' : 'USD',
+            		'subTotal' : 1.99,
+            		'recipient' : 'rjfun.mobile@gmail.com',
+            		'description' : 'game coins (' + n + ')',
+            		'merchantName' : 'rjfun'
+            	}, function() {
+            		ppm.pay({}, function() {
+            			// alert( 'paypal pay done' );
+            		}, function() {
+            			alert('paypal pay failed');
+            		});
+            	}, function() {
+            		alert('paypal setPaymentInfo failed');
+            	});
+            } else {
+            	alert( 'PayPalMPL plugin not loaded.' );
+            }
+        }
+        

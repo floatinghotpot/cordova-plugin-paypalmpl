@@ -22,28 +22,74 @@
         <meta charset="utf-8" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
-        <title>Hello World</title>
+        <title>Hello Paypal</title>
     </head>
-    <body>
-        <div class="app">
-            <h1>Apache Cordova</h1>
-            <div id="deviceready" class="blink">
-                <p class="event listening">Connecting to Device</p>
-                <p class="event received">Device is Ready</p>
-            </div>
-            <div>
-            	<button id='show-ad' onClick="if(window.AdMob){ window.AdMob.showAd(true); }">Show Ad</button>
-            	<button id='hide-ad' onClick="if(window.AdMob){ window.AdMob.showAd(false); }">Hide Ad</button>
-            </div>
+    <body onload="onLoad()">
+        	<div id='status'>please wait ...</div>
             <div>
             	<button id='buy-1000gold' onClick="buyGold(1000);">Buy 1,000 golds</button>
             	<button id='buy-10000gold' onClick="buyGold(10000);">Buy 10,000 golds</button>
             </div>
-        </div>
         <script type="text/javascript" src="cordova.js"></script>
-        <script type="text/javascript" src="demo.js"></script>
         <script type="text/javascript">
-            app.initialize();
+        function onLoad() {
+        	document.getElementById('status').innerHTML = "device ready";
+        	
+            document.addEventListener('deviceready', onDeviceReady, false);
+        }
+        
+        function onDeviceReady() {
+        	
+            document.addEventListener('PaypalPaymentEvent.Success',function(){
+            	alert('game coins purchased, enjoy gaming.');
+            });
+
+            document.addEventListener('PaypalPaymentEvent.Failed',function(){
+            	alert('sorry that payment failed, please try again later.');
+            });
+            
+            if( window.plugins && window.plugins.PayPalMPL ) {
+            	var isTesting = false;
+            	var appID = isTesting ? 'APP-80W284485P519543T' : 'APP-0HN45655HA567492N';
+                var appEnv = isTesting ? ppm.PaymentEnv.ENV_SANDBOX : ppm.PaymentEnv.ENV_LIVE;
+				
+                var ppm = window.plugins.PayPalMPL;
+                ppm.initWithAppID( {
+            	      'appId': appID,
+            	      'appEnv': appEnv,
+            	      }, function(){
+            	    	  window.plugins.PayPalMPL.isReady = true;
+            	      }, function(){
+            	      });
+        	}
+        }
+        
+        function buyGameCoin( n ) {
+            if( window.plugins && window.plugins.PayPalMPL ) {
+            	var ppm = window.plugins.PayPalMPL;
+            	ppm.setPaymentInfo({
+        			'lang' : 'en_US',
+        			'paymentType' : ppm.PaymentType.TYPE_GOODS,
+        			'showPayPalButton': -1,
+            		'paymentCurrency' : 'USD',
+            		'subTotal' : 1.99,
+            		'recipient' : 'rjfun.mobile@gmail.com',
+            		'description' : 'game coins (' + n + ')',
+            		'merchantName' : 'rjfun'
+            	}, function() {
+            		ppm.pay({}, function() {
+            			// alert( 'paypal pay done' );
+            		}, function() {
+            			alert('paypal pay failed');
+            		});
+            	}, function() {
+            		alert('paypal setPaymentInfo failed');
+            	});
+            } else {
+            	alert( 'PayPalMPL plugin not loaded.' );
+            }
+        }
+
             </script>
     </body>
 </html>
