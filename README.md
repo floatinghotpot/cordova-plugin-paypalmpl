@@ -1,6 +1,4 @@
-cordova-plugin-paypalmpl
-
-# PayPalMPL Plugin #
+## PayPalMPL Plugin ##
 ---------------------------
 Can support PayPal in cordova/phonegap app? Yes, you can!
  
@@ -11,7 +9,7 @@ It's for PayPal classic library MPL (Mobile Payment Library), not for new PayPal
 
 https://github.com/floatinghotpot/mobile-sdk.git
 
-# How to use? #
+## How to use? ##
 ---------------------------
 To install this plugin, follow the [Command-line Interface Guide](http://cordova.apache.org/docs/en/edge/guide_cli_index.md.html#The%20Command-line%20Interface).
 
@@ -19,7 +17,7 @@ To install this plugin, follow the [Command-line Interface Guide](http://cordova
 
 Check the README.md in sub folder for details.
 
-# How to use it in javascript #
+## How to use it in javascript ##
 ---------------------------------
 
         function onDeviceReady() {
