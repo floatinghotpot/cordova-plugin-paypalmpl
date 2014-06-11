@@ -31,11 +31,12 @@ Check the README.md in sub folder for details.
             });
             
             if( window.plugins && window.plugins.PayPalMPL ) {
+		var ppm = window.plugins.PayPalMPL;
+
             	var isTesting = false;
             	var appID = isTesting ? 'APP-80W284485P519543T' : 'APP-0HN45655HA567492N';
                 var appEnv = isTesting ? ppm.PaymentEnv.ENV_SANDBOX : ppm.PaymentEnv.ENV_LIVE;
 				
-                var ppm = window.plugins.PayPalMPL;
                 ppm.initWithAppID( {
             	      'appId': appID,
             	      'appEnv': appEnv,
