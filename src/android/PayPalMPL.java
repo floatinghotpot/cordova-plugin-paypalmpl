@@ -190,7 +190,7 @@ public class PayPalMPL extends CordovaPlugin implements OnClickListener {
 		
 		if( strType.equals("TYPE_GOODS") ) {
 			this.pType = PayPal.PAYMENT_TYPE_GOODS;
-		} else if( strType.equals("YPE_SERVICE") ) {
+		} else if( strType.equals("TYPE_SERVICE") ) {
 			this.pType = PayPal.PAYMENT_TYPE_SERVICE;
 		} if( strType.equals("TYPE_PERSONAL") ) {
 			this.pType = PayPal.PAYMENT_TYPE_PERSONAL;
