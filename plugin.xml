@@ -30,6 +30,7 @@
             </feature>
         </config-file>
         <source-file src="src/android/PayPalMPL.java" target-dir="src/com/rjfun/cordova/plugin" />
+        <source-file src="src/android/PayPalMPLResultDelegate.java" target-dir="src/com/rjfun/cordova/plugin" />
         
      </platform>
      
