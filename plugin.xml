@@ -2,11 +2,11 @@
 
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
 	xmlns:android="http://schemas.android.com/apk/res/android"
-           id="com.rjfun.cordova.plugin.paypalmpl"
+           id="cordova-plugin-paypalmpl"
       version="1.0.0">
       
     <name>PayPalMPL</name>
-	<description>Add PayPal support with MPL SDK (Mobile Payment Library, not new SDK) to your cordova apps or games</description>
+	<description>Cordova plugin for PayPal with MPL SDK (Mobile Payment Library, not new SDK)</description>
 	<author>Liming Xie</author>
 	<license>MIT</license>
 	<keywords>paypal,payment,purchase,pay,buy</keywords>
@@ -23,7 +23,17 @@
 
     <!-- android -->
     <platform name="android">
-<dependency id="com.paypal.mpl-android" version=">=1.5.5"/>
+        <config-file target="AndroidManifest.xml" parent="/manifest/application">
+            <activity android:configChanges="keyboardHidden|orientation" 
+                android:name="com.paypal.android.MEP.PayPalActivity" 
+                android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        </config-file>
+        <config-file target="AndroidManifest.xml" parent="/*">
+			<uses-permission android:name="android.permission.INTERNET"/>
+			<uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+			<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+        </config-file>
+          
         <config-file target="res/xml/config.xml" parent="/*">
             <feature name="PayPalMPL">
                 <param name="android-package" value="com.rjfun.cordova.plugin.PayPalMPL"/>
@@ -31,12 +41,12 @@
         </config-file>
         <source-file src="src/android/PayPalMPL.java" target-dir="src/com/rjfun/cordova/plugin" />
         <source-file src="src/android/PayPalMPLResultDelegate.java" target-dir="src/com/rjfun/cordova/plugin" />
-        
+        <source-file src="PayPal_MPL.jar" target-dir="libs" />
+
      </platform>
      
      <!-- ios -->
-     <platform name="ios">    
-<dependency id="com.paypal.mpl-ios" version=">=2.0.1"/>
+     <platform name="ios">
          <config-file target="config.xml" parent="/*">
              <feature name="PayPalMPL">
                  <param name="ios-package" value="CDVPayPalMPL" />
@@ -46,6 +56,21 @@
          <header-file src="src/ios/CDVPayPalMPL.h" />
          <source-file src="src/ios/CDVPayPalMPL.m" />
 
+         <header-file src="libs/PayPal.h" />
+         <header-file src="libs/PayPalAddress.h" />
+         <header-file src="libs/PayPalAdvancedPayment.h" />
+         <header-file src="libs/PayPalAmounts.h" />
+         <header-file src="libs/PayPalInvoiceData.h" />
+         <header-file src="libs/PayPalInvoiceItem.h" />
+         <header-file src="libs/PayPalPayment.h" />
+         <header-file src="libs/PayPalPreapprovalDetails.h" />
+         <header-file src="libs/PayPalReceiverAmounts.h" />
+         <header-file src="libs/PayPalReceiverPaymentDetails.h" />
+         <source-file src="libs/libPayPalMPL.a" framework="true" />
+
+         <framework src="Security.framework" />
+         <framework src="libxml2.dylib" />
+         <framework src="libz.1.2.5.dylib" />
 	</platform>
           
 </plugin>
